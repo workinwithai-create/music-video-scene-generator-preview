@@ -383,7 +383,7 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
       return;
     }
 
-    startAtRef.current = performance.now() + 1400;
+    startAtRef.current = performance.now();
     nextTargetBeatRef.current = 4;
     cueIndexRef.current = 0;
     lastBeatRef.current = -1;
@@ -416,7 +416,7 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
     URL.revokeObjectURL(url);
   };
 
-  const liveMotion = Math.round(zones.any * 420);
+  const liveMotion = Math.round(clamp(zones.any * 420, 0, 100));
   const cueProgress = currentCue
     ? clamp(1 - ((currentCue.targetAt - performance.now()) / beatMs), 0, 1)
     : 0;
@@ -448,7 +448,7 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
               key={value}
               type="button"
               onClick={() => setMode(value)}
-              className={'rounded-2xl border p-4 text-left transition ' + (mode === value ? 'border-cyan-300 bg-cyan-300/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}
+              className={'rounded-2xl border p-4 text-left transition ' + (mode === value ? 'border-cyan-300 bg-cyan-300/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]') + (cameraOn ? ' cursor-not-allowed opacity-70' : '')}
             >
               <div className="text-sm font-black tracking-[0.18em]">{label}</div>
               <div className="mt-1 text-xs leading-5 text-white/55">{description}</div>
@@ -550,12 +550,12 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
 
               <label className="mb-4 block">
                 <span className="mb-1 flex justify-between text-xs text-white/60"><span>BPM</span><span>{bpm}</span></span>
-                <input type="range" min="50" max="220" value={bpm} onChange={event => setBpm(Number(event.target.value))} disabled={playing} className="w-full" />
+                <input type="range" min="50" max="220" value={bpm} onChange={event => setBpm(Number(event.target.value))} disabled={cameraOn} className="w-full disabled:opacity-50" />
               </label>
 
               <label className="mb-4 block">
                 <span className="mb-1 flex justify-between text-xs text-white/60"><span>Cue spacing</span><span>every {cueEvery} beat{cueEvery === 1 ? '' : 's'}</span></span>
-                <select value={cueEvery} onChange={event => setCueEvery(Number(event.target.value))} disabled={playing} className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm">
+                <select value={cueEvery} onChange={event => setCueEvery(Number(event.target.value))} disabled={cameraOn} className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm">
                   <option value={1}>Every beat</option>
                   <option value={2}>Every 2 beats</option>
                   <option value={4}>Every bar</option>
@@ -564,19 +564,19 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
 
               <label className="mb-4 block">
                 <span className="mb-1 flex justify-between text-xs text-white/60"><span>Camera sensitivity</span><span>{sensitivity}%</span></span>
-                <input type="range" min="1" max="100" value={sensitivity} onChange={event => setSensitivity(Number(event.target.value))} className="w-full" />
+                <input type="range" min="1" max="100" value={sensitivity} onChange={event => setSensitivity(Number(event.target.value))} disabled={cameraOn} className="w-full disabled:opacity-50" />
               </label>
 
               <label className="block">
                 <span className="mb-1 flex justify-between text-xs text-white/60"><span>Assist</span><span>{assist}%</span></span>
-                <input type="range" min="0" max="100" value={assist} onChange={event => setAssist(Number(event.target.value))} className="w-full" />
+                <input type="range" min="0" max="100" value={assist} onChange={event => setAssist(Number(event.target.value))} disabled={cameraOn} className="w-full disabled:opacity-50" />
                 <span className="mt-1 block text-[11px] leading-4 text-white/35">v0.1 uses Assist as timing/motion forgiveness. Character animation cleanup plugs into this control later.</span>
               </label>
 
               {mode === 'character' && (
                 <label className="mt-4 block">
                   <span className="mb-1 block text-xs text-white/60">Character / avatar</span>
-                  <input value={characterName} onChange={event => setCharacterName(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm" placeholder="Fox, robot, avatar..." />
+                  <input value={characterName} onChange={event => setCharacterName(event.target.value)} disabled={cameraOn} className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm" placeholder="Fox, robot, avatar..." />
                 </label>
               )}
             </section>
@@ -595,7 +595,7 @@ export default function PulsePerformanceRoom({ session, onMotionEvents }: PulseP
               {(['left', 'right', 'top', 'bottom', 'center'] as const).map(zone => (
                 <div key={zone} className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
                   <div className="text-[10px] uppercase tracking-[0.14em] text-white/40">{zone}</div>
-                  <div className="mt-1 font-black">{Math.round(zones[zone] * 420)}%</div>
+                  <div className="mt-1 font-black">{Math.round(clamp(zones[zone] * 420, 0, 100))}%</div>
                 </div>
               ))}
             </div>
