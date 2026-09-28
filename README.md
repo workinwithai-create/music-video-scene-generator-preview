@@ -64,3 +64,27 @@ Then in the component, replace the simulation in `generateRunwayVideo()` with a 
 - Webhook status polling for long tasks
 
 Built with the `auto-build-features` skill — ready for production extension.
+
+## PULSE Performance Room v0.1.0
+
+PULSE turns the webcam into a rhythm-game controller for Pipe Dreams Studio.
+
+Current MVP:
+- Camera-based motion-zone controller (left/right/top/bottom/center)
+- BPM-driven song clock with four-beat count-in
+- Beat-synced cues: step, grab, kick, point, duck, turn, lean, throw, guitar hit, mic grab, free move
+- Timing, movement, energy, score, and combo tracking
+- Game, Director, and Character modes
+- Assist control for timing/motion forgiveness
+- Timestamped choreography event capture
+- JSON export using the `pipe-dreams.pulse.motion-events` schema
+- Optional Pipe Dreams song-session input for BPM/title/duration handoff
+
+The webcam frames stay local in this MVP. Only derived motion energy and timing events are stored in component state or exported.
+
+### Integration contract
+
+`PIPES / HIGH-DEA -> PipeDreamsSongSession -> PULSE -> PulseMotionEvent[] -> Music Video Room`
+
+Future tracking can replace the motion-zone detector with MediaPipe/Pose landmarks without changing the event contract.
+
