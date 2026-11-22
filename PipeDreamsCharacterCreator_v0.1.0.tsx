@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
+import Character3DStage, { type CharacterCameraView } from './Character3DStage_v0.2.0';
+import { scanSelfie, type FacePoint } from './faceScan_v0.2.0';
 
-export const CHARACTER_CREATOR_VERSION = '0.1.0';
+export const CHARACTER_CREATOR_VERSION = '0.2.0';
 export const CHARACTER_VAULT_KEY = 'pipe-dreams.character-vault.v1';
 
 type Hair = 'photo' | 'short' | 'long' | 'slick' | 'cap';
@@ -11,6 +13,11 @@ type Outfit = 'western' | 'stage' | 'studio' | 'street';
 type Glasses = 'none' | 'clear' | 'shades';
 
 export interface CharacterAppearance {
+  jawWidth: number;
+  cheekWidth: number;
+  noseWidth: number;
+  noseDepth: number;
+  eyeSpacing: number;
   faceWidth: number;
   faceLength: number;
   bodyWidth: number;
@@ -30,6 +37,7 @@ export interface PipeDreamsCharacter {
   version: string;
   displayName: string;
   photoDataUrl: string | null;
+  facePoints?: FacePoint[] | null;
   appearance: CharacterAppearance;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +51,11 @@ export interface CharacterCreatorProps {
 const DEFAULT_APPEARANCE: CharacterAppearance = {
   faceWidth: 100,
   faceLength: 100,
+  jawWidth: 100,
+  cheekWidth: 100,
+  noseWidth: 100,
+  noseDepth: 100,
+  eyeSpacing: 100,
   bodyWidth: 100,
   bodyHeight: 100,
   skin: '#c68c68',
@@ -251,6 +264,8 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState('My Character');
   const [photo, setPhoto] = useState<string | null>(null);
+  const [facePoints, setFacePoints] = useState<FacePoint[] | null>(null);
+  const [view, setView] = useState<CharacterCameraView>('full');
   const [appearance, setAppearance] = useState<CharacterAppearance>({ ...DEFAULT_APPEARANCE });
   const [message, setMessage] = useState('Your selfie stays in this browser unless you explicitly export it.');
   const [busy, setBusy] = useState(false);
@@ -270,7 +285,17 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
     try {
       const data = await resizeSelfie(file);
       setPhoto(data);
-      setMessage('Selfie ready. Adjust your character, then save it to the Character Vault.');
+      setFacePoints(null);
+      setMessage('Building the 3D face mesh from your selfie...');
+      try {
+        const points = await scanSelfie(data);
+        setFacePoints(points);
+        setView('face');
+        setMessage('3D face scan complete. Rotate the head and refine your likeness.');
+      } catch (scanError) {
+        setFacePoints(null);
+        setMessage(scanError instanceof Error ? 'Face scan unavailable: ' + scanError.message : 'Face scanning failed. Retry with a clear selfie.');
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not open that photo.');
     } finally {
@@ -282,6 +307,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
     setSelectedId(character.id);
     setName(character.displayName);
     setPhoto(character.photoDataUrl);
+    setFacePoints(character.facePoints || null);
     setAppearance({ ...DEFAULT_APPEARANCE, ...character.appearance });
     setMessage('Editing saved character. Save to keep your changes.');
   };
@@ -290,6 +316,8 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
     setSelectedId(null);
     setName('My Character');
     setPhoto(null);
+    setFacePoints(null);
+    setView('full');
     setAppearance({ ...DEFAULT_APPEARANCE });
     setMessage('New character. Add a selfie or build one manually.');
   };
@@ -303,6 +331,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
       version: CHARACTER_CREATOR_VERSION,
       displayName: name.trim().slice(0, 50) || 'My Character',
       photoDataUrl: photo,
+      facePoints,
       appearance: { ...appearance },
       createdAt: original?.createdAt || now,
       updatedAt: now,
@@ -328,6 +357,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
         version: CHARACTER_CREATOR_VERSION,
         displayName: name.trim() || 'My Character',
         photoDataUrl: photo,
+        facePoints,
         appearance,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -347,7 +377,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
       <div>
         <p className="text-xs font-bold uppercase tracking-[.2em] text-cyan-300">PIPE DREAMS STUDIO · CHARACTER VAULT</p>
         <h2 className="mt-1 text-2xl font-black md:text-3xl">MY CHARACTER <span className="text-cyan-300">v{CHARACTER_CREATOR_VERSION}</span></h2>
-        <p className="mt-1 max-w-2xl text-sm text-white/55">Snap a selfie, build a look-alike, dress for the stage, and keep the same character for every song.</p>
+        <p className="mt-1 max-w-2xl text-sm text-white/55">Take a selfie, scan facial landmarks, sculpt the 3D face and body, and save an avatar you can rotate and customize.</p>
       </div>
       {onClose && <button type="button" onClick={onClose}
         className="rounded-xl border border-white/20 px-4 py-2 text-sm hover:bg-white/10">Close</button>}
@@ -355,13 +385,30 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
 
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
       <div>
-        <AvatarPreview photo={photo} appearance={appearance} displayName={name || 'My Character'} />
+        <Character3DStage photo={photo} facePoints={facePoints} appearance={appearance} view={view} height={540} />
+        <div className="mt-3 flex flex-wrap gap-2" aria-label="3D camera views">
+          {(['full','face','three-quarter','side'] as CharacterCameraView[]).map(option =>
+            <button key={option} type="button" onClick={() => setView(option)}
+              className={'rounded-lg border px-3 py-2 text-xs font-semibold capitalize ' +
+                (view === option ? 'border-cyan-300 bg-cyan-300/15 text-cyan-100' : 'border-white/20 bg-white/5 text-white/75')}>
+              {option === 'three-quarter' ? '¾ turn' : option === 'full' ? 'Full body' : option === 'face' ? 'Face close-up' : 'Side'}
+            </button>)}
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => cameraInput.current?.click()} disabled={busy}
             className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-[#06121b] disabled:opacity-50">Take a selfie</button>
           <button type="button" onClick={() => uploadInput.current?.click()} disabled={busy}
             className="rounded-xl border border-white/25 px-4 py-3 text-sm font-semibold hover:bg-white/10 disabled:opacity-50">Use a photo</button>
-          {photo && <button type="button" onClick={() => setPhoto(null)}
+          {photo && !facePoints && <button type="button" disabled={busy} onClick={() => {
+            setBusy(true);
+            void scanSelfie(photo).then(points => {
+              setFacePoints(points);
+              setView('face');
+              setMessage('3D face scan complete. Refine your character and save.');
+            }).catch(error => setMessage('Face scan failed: ' + (error instanceof Error ? error.message : 'try again')))
+              .finally(() => setBusy(false));
+          }} className="rounded-xl border border-cyan-300/40 px-4 py-3 text-sm text-cyan-200 disabled:opacity-40">Retry 3D scan</button>}
+          {photo && <button type="button" onClick={() => { setPhoto(null); setFacePoints(null); }}
             className="rounded-xl border border-white/15 px-4 py-3 text-sm text-white/70 hover:bg-white/10">Remove photo</button>}
         </div>
         <input ref={cameraInput} type="file" accept="image/*" capture="user" className="hidden"
@@ -369,8 +416,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
         <input ref={uploadInput} type="file" accept="image/*" className="hidden"
           aria-label="Choose an existing photo" onChange={event => { void importPhoto(event.target.files?.[0]); event.target.value = ''; }} />
         <p className="mt-3 text-xs leading-5 text-white/50">
-          <strong className="text-white/70">v0.1 limit:</strong> This is a photo-faced, illustrated character preview, not an automated 3D face scan.
-          Photos stay in browser storage; exporting the character includes the photo.
+          <strong className="text-white/70">v0.2:</strong> Your selfie is analyzed locally into a 3D facial surface and mapped onto a turntable character. Depth and the unseen back of the head are estimates, not a photogrammetric scan. The model must download once; your selfie is not sent to a server. Saved/exported profiles include the photo and mesh landmarks.
         </p>
       </div>
 
@@ -386,6 +432,11 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
           <div className="grid gap-4 sm:grid-cols-2">
             <Adjustment label="Face width" value={appearance.faceWidth} onChange={v => update('faceWidth', v)} />
             <Adjustment label="Face length" value={appearance.faceLength} onChange={v => update('faceLength', v)} />
+            <Adjustment label="Jaw width" value={appearance.jawWidth} onChange={v => update('jawWidth', v)} min={70} max={140} />
+            <Adjustment label="Cheek fullness" value={appearance.cheekWidth} onChange={v => update('cheekWidth', v)} min={70} max={140} />
+            <Adjustment label="Nose width" value={appearance.noseWidth} onChange={v => update('noseWidth', v)} min={70} max={140} />
+            <Adjustment label="Nose projection" value={appearance.noseDepth} onChange={v => update('noseDepth', v)} min={65} max={150} />
+            <Adjustment label="Eye spacing" value={appearance.eyeSpacing} onChange={v => update('eyeSpacing', v)} min={75} max={125} />
             <Adjustment label="Body width" value={appearance.bodyWidth} onChange={v => update('bodyWidth', v)} />
             <Adjustment label="Body height" value={appearance.bodyHeight} min={90} max={110} onChange={v => update('bodyHeight', v)} />
           </div>
