@@ -12,7 +12,7 @@ async function getFaceDetector(): Promise<FaceLandmarker> {
   if (!worker) {
     worker = (async () => {
       const files = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
       );
       return FaceLandmarker.createFromOptions(files, {
         baseOptions: {
