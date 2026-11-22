@@ -6,7 +6,7 @@ import { OrbitControls } from '@react-three/drei';
 import { Delaunay } from 'd3-delaunay';
 import * as THREE from 'three';
 import type { FacePoint } from './faceScan_v0.2.0';
-import type { CharacterAppearance } from './PipeDreamsCharacterCreator_v0.1.0';
+import type { CharacterAppearance } from './PipeDreamsCharacterCreator_v0.2.0';
 
 export type CharacterCameraView = 'full' | 'face' | 'three-quarter' | 'side';
 export interface Character3DStageProps {
