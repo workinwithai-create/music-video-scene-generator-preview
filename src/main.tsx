@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import PulsePerformanceRoom from '../PipeDreamsPulsePerformanceRoom_v0.1.1';
+import PulsePerformanceRoom from '../PipeDreamsPulsePerformanceRoom_v0.1.2';
 import './index.css';
 
 const demoSession = {
