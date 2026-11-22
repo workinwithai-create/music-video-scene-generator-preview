@@ -260,7 +260,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
     setLoaded(true);
   }, []);
 
-  const update = <K extends keyof CharacterAppearance>(key: K, value: CharacterAppearance[K]) => {
+  const update = <K extends keyof CharacterAppearance,>(key: K, value: CharacterAppearance[K]) => {
     setAppearance(previous => ({ ...previous, [key]: value }));
   };
 
