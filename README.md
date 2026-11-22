@@ -106,3 +106,22 @@ The PULSE preview now includes **Build My Character**, an in-browser, photo-assi
 **Privacy:** Camera frames are not uploaded by this preview. The compressed selfie is stored locally only after **Save character**; **Export profile** writes a JSON file containing the photo (if selected). Do not share that export publicly unless you intend to share the embedded image.
 
 **Quick test:** Launch the preview, open **Build My Character**, take or upload a selfie, adjust face/outfit, save, confirm Character mode displays your name, reload the page and reopen the vault. Then turn on the webcam, play beats, background/restore the tab and confirm cues continue. For Mac/iPhone camera access, use HTTPS or localhost.
+
+
+## Character Studio 3D v0.2.0 (replaces 2D editor in the live preview)
+
+This is the first genuinely **3D** character-building experiment for the Madden-inspired feature. The legacy 2D editor remains preserved as `PipeDreamsCharacterCreator_v0.1.0.tsx`.
+
+- Upload a clear front-facing selfie on your phone.
+- `@mediapipe/tasks-vision` extracts 468 local facial landmark coordinates from the photo.
+- The editor triangulates face points (Delaunay), masks triangles against the facial oval, uses the scanned face coordinates to estimate surface depth, and texture-maps the selfie to the 3D head.
+- A 3D body with legs, boots, torso, neck, arms and a skull can be rotated and zoomed. Camera shortcuts: Full Body, Face Close-up, ¾ Turn, Side. Camera works with mouse or touch.
+- Face width and length, jaw, cheek, nose width/projection, eye spacing, body width/height, hair, beard, glasses, and outfits are editable in the live model.
+- Faces and appearance settings save together as a portable character profile in the existing local vault.
+- PULSE v0.1.2 displays the chosen 3D character next to the camera and translates broad motion zones into basic torso/arm animation.
+
+**Integrity / limitations:** This does not synthesize an unseen back of the head or reconstruct an exact skull from one photo. It is a textured face mesh with estimated depth; the remaining geometry and hair are procedural. This is not a production-ready skinned GLB/avatar rig, and **PULSE v0.1.2 still does not have full-body skeletal tracking**. The model and WASM are downloaded over the network, but selfie pixels are processed in the browser. If scanning fails, the UI displays an error and keeps a generic 3D head; it does not claim the generic head is a scan.
+
+**Test acceptance on phone:** Take a selfie with good light -> wait for '3D face scan complete' -> drag to rotate from front to side -> adjust jaw/nose -> change outfits -> save -> refresh -> reopen saved character -> select Character mode in PULSE -> confirm a 3D avatar is present -> use camera and verify coarse motion response.
+
+**Future v0.3.0:** Proper humanoid skeleton and facial blendshape rig, two-photo/profile reconstruction, likeness QA, staged clothing asset sets, importable/exportable GLB, face capture from live video, and reliable full-body pose tracking.
