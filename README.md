@@ -88,3 +88,21 @@ The webcam frames stay local in this MVP. Only derived motion energy and timing 
 
 Future tracking can replace the motion-zone detector with MediaPipe/Pose landmarks without changing the event contract.
 
+
+
+## My Character v0.1.0 + PULSE v0.1.1
+
+The PULSE preview now includes **Build My Character**, an in-browser, photo-assisted character creator:
+
+- On a phone, **Take a selfie** requests the front-facing camera using the browser's file capture control; **Use a photo** also works.
+- The photo is resized and stored locally for the face reference; a non-photo illustrated character is available too.
+- Edit face width/length, body proportions, skin tone, hair/color, facial hair, eyewear, stage outfit and colors in a live preview.
+- Save up to six profiles in this device's browser Character Vault and export a portable JSON character profile with embedded selfie.
+- Saving a character selects **Character** mode in PULSE and retains the chosen display name across local page reloads.
+- PULSE v0.1.1 fixes background-tab beat-cue recovery, makes camera-active mode selection truly disabled, and moves motion-event callbacks outside React state updaters.
+
+**Current fidelity:** The preview is a 2.5D photo-faced illustration, **not an automatic 3D facial reconstruction or likeness engine**. A single selfie cannot reliably recover exact facial depth, hair geometry or profile view. The stored profile schema separates identity/appearance from performance events so a future 3D face/rig service can reuse it. PULSE motion detection still uses coarse camera motion zones, not full skeletal tracking. The Character Vault currently uses device-local browser storage, not cross-device account sync.
+
+**Privacy:** Camera frames are not uploaded by this preview. The compressed selfie is stored locally only after **Save character**; **Export profile** writes a JSON file containing the photo (if selected). Do not share that export publicly unless you intend to share the embedded image.
+
+**Quick test:** Launch the preview, open **Build My Character**, take or upload a selfie, adjust face/outfit, save, confirm Character mode displays your name, reload the page and reopen the vault. Then turn on the webcam, play beats, background/restore the tab and confirm cues continue. For Mac/iPhone camera access, use HTTPS or localhost.
