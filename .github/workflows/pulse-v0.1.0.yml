@@ -1,4 +1,4 @@
-name: PULSE v0.1.1 + My Character v0.1.0 build check
+name: PULSE v0.1.2 + My Character v0.2.0 build check
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
     branches:
       - feature/pulse-performance-room-v0.1.0
       - feature/my-character-v0.1.0
+      - feature/character-3d-v0.2.0
 
 jobs:
   build:
