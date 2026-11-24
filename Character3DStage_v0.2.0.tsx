@@ -38,7 +38,7 @@ function inPolygon(px: number, py: number, polygon: Array<[number, number]>): bo
   return inside;
 }
 
-export function makeFacialMesh(points: FacePoint[], a: CharacterAppearance): THREE.BufferGeometry | null {
+function makeFacialMesh(points: FacePoint[], a: CharacterAppearance): THREE.BufferGeometry | null {
   if (points.length < 468) return null;
   const left = points[234], right = points[454], top = points[10], chin = points[152];
   if (!left || !right || !top || !chin) return null;

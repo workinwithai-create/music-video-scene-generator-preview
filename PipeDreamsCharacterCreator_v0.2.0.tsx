@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import Character3DStage, { type CharacterCameraView } from './Character3DStage_v0.2.0';
+import Character3DStage, { type CharacterCameraView } from './Character3DStage_v0.2.1';
+import { sampleFaceColors } from './faceColors_v0.2.1';
 import { scanSelfie, type FacePoint } from './faceScan_v0.2.0';
 
 export const CHARACTER_CREATOR_VERSION = '0.2.0';
@@ -279,6 +280,12 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
     setAppearance(previous => ({ ...previous, [key]: value }));
   };
 
+  // v0.2.1: take the skin and hair colour from the selfie so the head, neck and hands match the face.
+  const matchColors = async (data: string, points: FacePoint[]) => {
+    const colors = await sampleFaceColors(data, points);
+    if (colors) setAppearance(previous => ({ ...previous, skin: colors.skin, hairColor: colors.hair, beardColor: colors.hair }));
+  };
+
   const importPhoto = async (file?: File) => {
     if (!file) return;
     setBusy(true);
@@ -290,6 +297,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
       try {
         const points = await scanSelfie(data);
         setFacePoints(points);
+        await matchColors(data, points);
         setView('face');
         setMessage('3D face scan complete. Rotate the head and refine your likeness.');
       } catch (scanError) {
@@ -401,8 +409,9 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
             className="rounded-xl border border-white/25 px-4 py-3 text-sm font-semibold hover:bg-white/10 disabled:opacity-50">Use a photo</button>
           {photo && !facePoints && <button type="button" disabled={busy} onClick={() => {
             setBusy(true);
-            void scanSelfie(photo).then(points => {
+            void scanSelfie(photo).then(async points => {
               setFacePoints(points);
+              await matchColors(photo, points);
               setView('face');
               setMessage('3D face scan complete. Refine your character and save.');
             }).catch(error => setMessage('Face scan failed: ' + (error instanceof Error ? error.message : 'try again')))
@@ -416,7 +425,7 @@ export default function PipeDreamsCharacterCreator({ onSave, onClose }: Characte
         <input ref={uploadInput} type="file" accept="image/*" className="hidden"
           aria-label="Choose an existing photo" onChange={event => { void importPhoto(event.target.files?.[0]); event.target.value = ''; }} />
         <p className="mt-3 text-xs leading-5 text-white/50">
-          <strong className="text-white/70">v0.2:</strong> Your selfie is analyzed locally into a 3D facial surface and mapped onto a turntable character. Depth and the unseen back of the head are estimates, not a photogrammetric scan. The model must download once; your selfie is not sent to a server. Saved/exported profiles include the photo and mesh landmarks.
+Your selfie is turned into a 3D face on this device and is not sent to a server. The face is straightened to look ahead, and skin and hair colour are picked up from the photo; change them below if they are off. The back of the head and the hair shape are a best guess. A front-on photo in even light works best. Saved and exported profiles include the photo.
         </p>
       </div>
 

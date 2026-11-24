@@ -147,15 +147,37 @@ The preview now opens `PipeDreamsPulsePerformanceRoom_v0.2.0.tsx`. Earlier versi
 
 **Privacy.** Camera frames never leave the device. The tracking program and its model file are downloaded from jsDelivr and Google storage the first time.
 
-**Checks.** `npm test` runs 16 tests of the tracking and scoring maths on made-up skeletons (needs Node 22.18 or newer). The page was also run in headless Chrome with a photo of a person as a fake camera: tracking loaded, the character matched the pose, and Game, Director and Free play ran start to finish, with and without body tracking.
+**Checks.** `npm test` runs 24 tests: the tracking and scoring maths on made-up skeletons, and the head shape on a scanned face (needs Node 22.18 or newer). The page was also run in headless Chrome with a photo of a person as a fake camera: tracking loaded, the character matched the pose, and Game, Director and Free play ran start to finish, with and without body tracking.
 
 **Not yet checked or built**
 
 - Nobody has played it on a real phone camera yet. How strict each move feels (how far you must step, how fast a throw is) was set by reasoning and by the tests, and will need tuning after real play. Open **Tracking details** to watch each move's bar fill as you do it.
 - Tracking speed on a phone is unmeasured. PULSE halves its tracking rate by itself if the phone is slow.
 - The click is the only music. Playing to a real song needs the song and its tempo from the Pipe Dreams song library (the `session` prop is ready for it).
-- The My Character editor still previews the older, rounder body. On stage the character uses the new jointed body with the same face, hair, beard, glasses and colours.
 - Turns are judged only by the shoulders looking narrower; the depth a single camera reports is too rough for more.
 
 **Phone test.** Open the preview, tap Start, allow the camera, prop the phone so the small picture shows your head, arms and hips, and wait for "Tracking on". Raise a hand, lean, step sideways and check the character follows like a mirror. Play 16 bars and check the results card. Switch to Director, do five clear moves and check they are listed with bar and beat.
+
+
+## My Character head v0.2.1 (part of the PULSE v0.2.0 preview)
+
+The first phone test of the v0.2.0 selfie face showed a face with holes in it, pointing off to one side, pasted on a bald egg. Measured causes, on a test scan:
+
+- **Holes.** The face was laid over a separate ball, and 97 of the 468 face points ended up behind the ball's surface, so the ball showed through the cheeks and forehead.
+- **Squashed.** The selfie is stored 480 x 600 but was treated as square, so faces came out about a fifth too short (height to width 1.04 instead of 1.29).
+- **Crooked.** The face was built exactly as it lay in the photo. A selfie from below or with the head turned gave a face pointing that way, and with the head turned 35 degrees and tipped 20, nearly half of the face surface was lost (454 of 876 triangles left).
+- **Pasted on.** Stock skin colour, a hard photo edge, no hair for "my natural hair".
+
+What v0.2.1 does (`headLayout_v0.2.1.ts`, `CharacterHead_v0.2.1.tsx`, `faceData_v0.2.1.ts`, `faceColors_v0.2.1.ts`):
+
+- Joins the landmarks with MediaPipe's standard face triangles, so the face is always one complete skin.
+- Turns the face to look straight ahead using the landmarks' own depth, in true proportion.
+- Grows the back of the head out of the face's own edge: one surface, nothing to poke through, with a real crown, ears and head depth.
+- Fades the photo into the skin at the edge, and takes skin and hair colour from the photo (still editable).
+- Gives characters without a selfie MediaPipe's neutral face shape instead of a blank ball.
+- The editor preview (`Character3DStage_v0.2.1.tsx`) now shows the same jointed figure that performs on the PULSE stage. `Character3DStage_v0.2.0.tsx` is kept unchanged. `PipeDreamsCharacterCreator_v0.2.0.tsx` changed in three places only: which preview it shows, colour matching after a scan, and its note text.
+
+Saved characters from v0.2.0 work as they are; they pick up the new head automatically.
+
+**Limits.** One photo only shows one side of things. A selfie taken well off to the side will be straightened, but the cheek that was turned away has little or no picture to use and will look smeared. The back of the head and the hair shape are a guess, and hair is one simple shape per style. This is a stylised game character, not a likeness scan. Checked with computer-generated test faces (front-on and tilted 24 degrees), not yet with a real selfie on a phone.
 

@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
-import { makeFacialMesh } from './Character3DStage_v0.2.0';
+import CharacterHead from './CharacterHead_v0.2.1';
+import type { FacePoint } from './headLayout_v0.2.1';
 import type { CharacterAppearance, PipeDreamsCharacter } from './PipeDreamsCharacterCreator_v0.2.0';
 import type { BodyState, Grade, Vec3 } from './pulseTracking_v0.2.0';
 
@@ -35,7 +36,7 @@ export const STAND_IN_APPEARANCE: CharacterAppearance = {
 };
 
 const THIGH = 0.98, SHIN = 0.98, FOOT = 0.16, UPPER_ARM = 0.74, FOREARM = 0.7;
-const SHOULDER_Y = 1.42, SHOULDER_X = 0.66, HEAD_Y = 2.27, HEAD_SCALE = 0.46;
+const SHOULDER_Y = 1.42, SHOULDER_X = 0.66, NECK_TOP = 1.72, HEAD_SCALE = 0.42;
 const DOWN = new THREE.Vector3(0, -1, 0);
 const UP_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -56,82 +57,17 @@ function Blob({ at, scale, color, roughness = 0.85, metalness = 0 }: {
   </mesh>;
 }
 
-/** The head from Character Studio 3D v0.2.0 (same measurements), so a saved character looks the same here. */
-function Head({ character, appearance: a }: { character: PipeDreamsCharacter | null; appearance: CharacterAppearance }) {
-  const facePoints = character?.facePoints || null;
-  const photo = character?.photoDataUrl || null;
-  const faceGeometry = useMemo(() => (facePoints ? makeFacialMesh(facePoints, a) : null), [facePoints, a]);
-  const photoTexture = useMemo(() => {
-    if (!photo || !facePoints) return null;
-    const texture = new THREE.TextureLoader().load(photo);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    return texture;
-  }, [photo, facePoints]);
-  useEffect(() => () => { faceGeometry?.dispose(); photoTexture?.dispose(); }, [faceGeometry, photoTexture]);
-  const fw = a.faceWidth / 100, fl = a.faceLength / 100;
-
-  return <group scale={HEAD_SCALE}>
-    <group position={[0, -3.7, 0]}>
-      <Blob at={[0, 3.7, -0.12]} scale={[0.93 * fw, 1.16 * fl, 0.77]} color={a.skin} />
-      {faceGeometry && photoTexture && <mesh geometry={faceGeometry} renderOrder={2}>
-        <meshStandardMaterial map={photoTexture} side={THREE.DoubleSide} roughness={0.93} metalness={0} color="#ffffff" />
-      </mesh>}
-      {!faceGeometry && <group>
-        {/* Simple eyes and brow so a character without a selfie still has a face. */}
-        <Blob at={[-0.32 * fw, 3.86, 0.6]} scale={[0.085, 0.1, 0.05]} color="#1c1210" roughness={0.4} />
-        <Blob at={[0.32 * fw, 3.86, 0.6]} scale={[0.085, 0.1, 0.05]} color="#1c1210" roughness={0.4} />
-        <Blob at={[0, 3.6, 0.68]} scale={[0.11, 0.2, 0.12]} color={a.skin} />
-      </group>}
-      {a.hair !== 'photo' && a.hair !== 'cap' &&
-        <Blob at={[0, 4.38, -0.14]} scale={[0.95 * fw, a.hair === 'long' ? 0.53 : 0.36, 0.8]} color={a.hairColor} roughness={0.95} />}
-      {a.hair === 'long' && <group>
-        <Blob at={[-0.84, 3.7, -0.2]} scale={[0.23, 0.94, 0.42]} color={a.hairColor} roughness={0.95} />
-        <Blob at={[0.84, 3.7, -0.2]} scale={[0.23, 0.94, 0.42]} color={a.hairColor} roughness={0.95} />
-      </group>}
-      {a.hair === 'cap' && <group>
-        <Blob at={[0, 4.44, 0]} scale={[1.05, 0.3, 0.86]} color={a.hairColor} />
-        <Blob at={[0, 4.3, 0.67]} scale={[0.88, 0.09, 0.45]} color={a.hairColor} />
-      </group>}
-      {a.beard !== 'none' && <group>
-        {(a.beard === 'full' || a.beard === 'stubble') &&
-          <Blob at={[0, 2.88 * fl + 0.1, 0.28]} scale={[0.63 * fw, a.beard === 'full' ? 0.39 : 0.26, 0.47]} color={a.beardColor} roughness={0.95} />}
-        {(a.beard === 'full' || a.beard === 'mustache') &&
-          <Blob at={[0, 3.39, 0.7]} scale={[0.4, 0.075, 0.085]} color={a.beardColor} roughness={0.95} />}
-      </group>}
-      {a.glasses !== 'none' && <group position={[0, 3.94, 0.77]}>
-        {[-0.31, 0.31].map(x => <group key={x}>
-          <mesh position={[x, 0, 0]}>
-            <torusGeometry args={[0.31, 0.035, 8, 32]} />
-            <meshStandardMaterial color="#1b0f08" metalness={0.6} roughness={0.3} />
-          </mesh>
-          <mesh position={[x, 0, -0.004]}>
-            <circleGeometry args={[0.28, 32]} />
-            <meshStandardMaterial transparent opacity={a.glasses === 'shades' ? 0.72 : 0.14}
-              color={a.glasses === 'shades' ? '#140d09' : '#e8d3b0'} />
-          </mesh>
-        </group>)}
-        <Blob at={[0, 0, 0.01]} scale={[0.11, 0.035, 0.035]} color="#1b0f08" />
-      </group>}
-      {a.outfit === 'studio' && <group>
-        {/* Studio look: headphones. */}
-        <mesh position={[0, 3.95, -0.12]} rotation={[0, 0, 0]}>
-          <torusGeometry args={[1.0, 0.07, 8, 32, Math.PI]} />
-          <meshStandardMaterial color="#1b0f08" metalness={0.5} roughness={0.4} />
-        </mesh>
-        <Blob at={[-0.98 * fw, 3.8, -0.12]} scale={[0.14, 0.3, 0.3]} color="#2a1a12" metalness={0.3} />
-        <Blob at={[0.98 * fw, 3.8, -0.12]} scale={[0.14, 0.3, 0.3]} color="#2a1a12" metalness={0.3} />
-      </group>}
-    </group>
-  </group>;
+export interface PerformerProps {
+  photo: string | null;
+  facePoints: FacePoint[] | null | undefined;
+  /** Missing values fall back to the stand-in look. */
+  appearance: Partial<CharacterAppearance> | null | undefined;
+  live: React.RefObject<PulseLive>;
 }
 
-function Performer({ character, live }: { character: PipeDreamsCharacter | null; live: React.RefObject<PulseLive> }) {
-  const a = useMemo(
-    () => (character?.appearance ? { ...STAND_IN_APPEARANCE, ...character.appearance } : STAND_IN_APPEARANCE),
-    [character],
-  );
+/** The character itself. Shared by the PULSE stage and the My Character editor so both show the same figure. */
+export function Performer({ photo, facePoints, appearance, live }: PerformerProps) {
+  const a = useMemo<CharacterAppearance>(() => ({ ...STAND_IN_APPEARANCE, ...(appearance || {}) }), [appearance]);
   const bw = clampNumber(a.bodyWidth / 100, 0.75, 1.35);
   const size = clampNumber(a.bodyHeight / 100, 0.8, 1.2);
   const longSleeves = a.outfit === 'western' || a.outfit === 'stage';
@@ -256,17 +192,13 @@ function Performer({ character, live }: { character: PipeDreamsCharacter | null;
           </mesh>
           <Blob at={[0, 0.14, 0.3]} scale={[0.09, 0.07, 0.04]} color="#f0c27a" roughness={0.3} metalness={0.9} />
           {a.outfit === 'stage' && [-0.16, 0.16].map(x => (
-            <mesh key={x} position={[x * bw, 0.95, 0.36]} rotation={[0.08, 0, x > 0 ? 0.12 : -0.12]}>
-              <boxGeometry args={[0.07, 0.86, 0.03]} />
+            <mesh key={x} position={[x * bw, 1.1, 0.335]} rotation={[-0.1, 0, x > 0 ? 0.12 : -0.12]}>
+              <boxGeometry args={[0.06, 0.46, 0.03]} />
               <meshStandardMaterial color="#f0c27a" metalness={0.85} roughness={0.3} />
             </mesh>
           ))}
-          {a.outfit === 'western' && <mesh position={[0, 1.42, 0.3]} rotation={[Math.PI, 0, 0]}>
-            <coneGeometry args={[0.24, 0.34, 4]} />
-            <meshStandardMaterial color="#e4c292" roughness={0.9} />
-          </mesh>}
-          <mesh position={[0, 1.62, 0]}>
-            <cylinderGeometry args={[0.13, 0.15, 0.34, 14]} />
+          <mesh position={[0, 1.64, 0.02]}>
+            <cylinderGeometry args={[0.17, 0.19, 0.4, 16]} />
             <meshStandardMaterial color={a.skin} roughness={0.85} />
           </mesh>
 
@@ -283,8 +215,8 @@ function Performer({ character, live }: { character: PipeDreamsCharacter | null;
             </group>
           ))}
 
-          <group ref={head} position={[0, HEAD_Y, 0]}>
-            <Head character={character} appearance={a} />
+          <group ref={head} position={[0, NECK_TOP, 0]}>
+            <CharacterHead photo={photo} facePoints={facePoints} appearance={a} scale={HEAD_SCALE} />
           </group>
         </group>
       </group>
@@ -295,7 +227,7 @@ function Performer({ character, live }: { character: PipeDreamsCharacter | null;
 const clampNumber = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 /** Copper pipe ring set into the stage floor; it glows on every beat and flashes when a move lands. */
-function StageFloor({ live }: { live: React.RefObject<PulseLive> }) {
+export function StageFloor({ live }: { live: React.RefObject<PulseLive> }) {
   const ring = useRef<THREE.MeshStandardMaterial>(null);
   const glow = useRef<THREE.PointLight>(null);
   useFrame(() => {
@@ -359,7 +291,7 @@ export default function PulseAvatarStage({ character, live }: { character: PipeD
     <directionalLight position={[5, 3, -5]} intensity={1.1} color="#f0c27a" />
     <CameraRig />
     <StageFloor live={live} />
-    <Performer character={character} live={live} />
+    <Performer photo={character?.photoDataUrl || null} facePoints={character?.facePoints} appearance={character?.appearance} live={live} />
     <Sparkles count={36} color="#f0a45c" size={2.4} speed={0.25} opacity={0.55} scale={[8, 5, 4]} position={[0, 2.6, -1.2]} />
   </Canvas>;
 }
