@@ -125,3 +125,37 @@ This is the first genuinely **3D** character-building experiment for the Madden-
 **Test acceptance on phone:** Take a selfie with good light -> wait for '3D face scan complete' -> drag to rotate from front to side -> adjust jaw/nose -> change outfits -> save -> refresh -> reopen saved character -> select Character mode in PULSE -> confirm a 3D avatar is present -> use camera and verify coarse motion response.
 
 **Future v0.3.0:** Proper humanoid skeleton and facial blendshape rig, two-photo/profile reconstruction, likeness QA, staged clothing asset sets, importable/exportable GLB, face capture from live video, and reliable full-body pose tracking.
+
+
+## PULSE v0.2.0 (current preview)
+
+The preview now opens `PipeDreamsPulsePerformanceRoom_v0.2.0.tsx`. Earlier versions are kept untouched.
+
+**What changed from v0.1.2**
+
+- **Real body tracking.** MediaPipe pose tracking runs in the browser (`poseTracker_v0.2.0.ts`). Each move is judged by its shape (hand above the shoulder, arm straight out, shoulders dropped, and so on) instead of by pixels changing in a region. The maths lives in `pulseTracking_v0.2.0.ts`.
+- **Your character copies you.** `PulseAvatar_v0.2.0.tsx` is a jointed figure (shoulders, elbows, hips, knees, head) that mirrors your arms, lean, sidestep, duck and, when the camera can see them, your legs. It wears the saved My Character look and scanned face. Until you build one, a stand-in performs.
+- **Sound.** Click track with a four-beat count-in, plus hit and miss sounds (`pulseAudio_v0.2.0.ts`). No audio files.
+- **A run has an ending.** Pick 8 to 64 bars; the run finishes on a results card with score, Perfect / Nice / Close / Miss counts and best combo.
+- **Three modes that differ.** Game prompts moves. Director gives no prompts and writes down each move you choose to do against the beat. Free play scores and records nothing.
+- **Settings work while the camera is on.** v0.1.x froze every control once the camera started.
+- **Pipe Dreams Studio look**, phone first: one screen holds the move bar, the stage and Start. The first download is about 90 KB compressed (was about 375 KB); the 3D stage and the character editor load after.
+
+**Fallback.** If body tracking cannot load, or cannot see you, PULSE falls back to the v0.1 motion-zone check and says so on screen ("Motion only"). Kick uses the motion-zone check whenever your legs are out of frame.
+
+**Event contract.** Unchanged: schema `pipe-dreams.pulse.motion-events`, same fields and beat numbering. v0.2.0 adds one optional field per event, `tracking` (`pose` or `zones`), and always fills `character`.
+
+**Privacy.** Camera frames never leave the device. The tracking program and its model file are downloaded from jsDelivr and Google storage the first time.
+
+**Checks.** `npm test` runs 16 tests of the tracking and scoring maths on made-up skeletons (needs Node 22.18 or newer). The page was also run in headless Chrome with a photo of a person as a fake camera: tracking loaded, the character matched the pose, and Game, Director and Free play ran start to finish, with and without body tracking.
+
+**Not yet checked or built**
+
+- Nobody has played it on a real phone camera yet. How strict each move feels (how far you must step, how fast a throw is) was set by reasoning and by the tests, and will need tuning after real play. Open **Tracking details** to watch each move's bar fill as you do it.
+- Tracking speed on a phone is unmeasured. PULSE halves its tracking rate by itself if the phone is slow.
+- The click is the only music. Playing to a real song needs the song and its tempo from the Pipe Dreams song library (the `session` prop is ready for it).
+- The My Character editor still previews the older, rounder body. On stage the character uses the new jointed body with the same face, hair, beard, glasses and colours.
+- Turns are judged only by the shoulders looking narrower; the depth a single camera reports is too rough for more.
+
+**Phone test.** Open the preview, tap Start, allow the camera, prop the phone so the small picture shows your head, arms and hips, and wait for "Tracking on". Raise a hand, lean, step sideways and check the character follows like a mirror. Play 16 bars and check the results card. Switch to Director, do five clear moves and check they are listed with bar and beat.
+

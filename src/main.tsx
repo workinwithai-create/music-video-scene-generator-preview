@@ -1,11 +1,11 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import PulsePerformanceRoom from '../PipeDreamsPulsePerformanceRoom_v0.1.2';
+import PulsePerformanceRoom from '../PipeDreamsPulsePerformanceRoom_v0.2.0';
 import './index.css';
 
 const demoSession = {
   songId: 'pulse-demo',
-  title: 'PULSE Camera Test',
+  title: 'PULSE Demo',
   bpm: 104,
 };
 
